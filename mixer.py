@@ -47,13 +47,14 @@ def record(device_index: Optional[int] = None):
             latency='low') as stream:
         while True:
             block, _ = stream.read(frames=blocksize)
+            block_time_epoch_seconds = int(time.time())
             start_ns = time.monotonic_ns()
             block = block.reshape(-1)
             rms_amplitude = np.sqrt(np.mean(np.square(block)))
             end_ns = time.monotonic_ns()
             elapsed_ns = end_ns - start_ns
-            rrdtool.update(rrd_file, f'N:{rms_amplitude}')
-            logging.info(f'RMS: {rms_amplitude:.2f}, elapsed ms: {int(elapsed_ns / 1_000_000)}')
+            rrdtool.update(rrd_file, f'{block_time_epoch_seconds}:{rms_amplitude}')
+            logging.info(f'RMS:{block_time_epoch_seconds}:{rms_amplitude:.2f}, elapsed ms: {int(elapsed_ns / 1_000_000)}')
 
 
 if __name__ == "__main__":
