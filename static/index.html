@@ -33,34 +33,15 @@
                 initialTimeRange: 'Last 60 Minutes',
                 resetTimeOnDateChange: true
             });
-
-            // you can also remove all the magic again
-            q('#rebinder').on('click',function(){
-                // q('#ctrl').dispose();
-                q('.graph').dispose();
-                q('.graph').forEach(function(item){ 
-                    graphs.push(
-                        q(item).rrdGraphPng({
-                        canvasPadding: 120,
-                        initialStart: null
-                        })
-                    ); 
-                });
-                q('#ctrl').rebind(graphs);
-            });
         });
     </script>
 </head>
 <body>
-<!--    <button id="rebinder">Rebind</button> -->
-
     <div id="ctrl"></div>
 
     <div><img
         style="width:695px;height:238px" class="graph"
         data-src-template="../graph?width={{width}}&amp;height={{height}}&amp;start={{start}}&amp;end={{end}}&amp;zoom={{zoom}}&amp;rand={{random}}"
     /></div>
-
-<!--    <button id="remove">Remove it all!</button>-->
 </body>
 </html>
