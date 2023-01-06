@@ -23,6 +23,7 @@
                     q(item).rrdGraphPng({
                         canvasPadding: 120,
                         initialRange: 3600,
+                        autoUpdate: false,
                         moveZoom: true
                     })
                 ); 
@@ -33,15 +34,20 @@
                 initialTimeRange: 'Last 60 Minutes',
                 resetTimeOnDateChange: true
             });
+
+            q('#flush').on('click', function() {
+                alert('TODO');
+            });
         });
     </script>
 </head>
 <body>
     <div id="ctrl"></div>
 
-    <div><img
-        style="width:695px;height:238px" class="graph"
-        data-src-template="../graph?width={{width}}&amp;height={{height}}&amp;start={{start}}&amp;end={{end}}&amp;zoom={{zoom}}&amp;rand={{random}}"
-    /></div>
+    <button id="flush">Flush</button>
+
+    <div>
+        <img style="width:1024px;height:600px" class="graph" data-src-template="../graph?width={{width}}&amp;height={{height}}&amp;start={{start}}&amp;end={{end}}&amp;zoom={{zoom}}&amp;rand={{random}}"/>
+    </div>
 </body>
 </html>

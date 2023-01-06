@@ -8,7 +8,7 @@ import os
 import logging
 import sys
 import typer
-from typing import Optional, Union
+from typing import Optional
 
 app = typer.Typer()
 
@@ -50,7 +50,7 @@ def record(device_index: Optional[int] = None):
             block_time_epoch_seconds = int(time.time())
             start_ns = time.monotonic_ns()
             block = block.reshape(-1)
-            rms_amplitude = np.sqrt(np.mean(np.square(block)))
+            rms_amplitude = np.sqrt(np.mean(np.square(block, dtype=np.int64)))
             end_ns = time.monotonic_ns()
             elapsed_ns = end_ns - start_ns
             rrdtool.update(rrd_file, f'{block_time_epoch_seconds}:{rms_amplitude}')
