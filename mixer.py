@@ -12,6 +12,7 @@ import typer
 from typing import Optional
 
 app = typer.Typer()
+rrd_dir = os.path.dirname(os.path.abspath(__file__))
 
 def get_input_device_info(device_index: Optional[int]) -> dict:
     return sd.query_devices(device_index, kind='input') if device_index is not None else sd.query_devices(kind='input')
@@ -24,13 +25,12 @@ def list_devices():
 
 @app.command()
 def record(device_index: Optional[int] = None,
-           rrdcached: str = 'unix:/tmp/rrdcached.sock'):
+           rrdcached: str = 'unix:/tmp/rrdcached.sock',
+           rrd_file: str = os.path.join(rrd_dir, 'mixer.rrd')):
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO, stream=sys.stdout)
     samplerate = 44100
     block_duration_seconds = 1
     blocksize = int(samplerate * block_duration_seconds)
-    rrd_dir = os.path.dirname(os.path.abspath(__file__))
-    rrd_file = os.path.join(rrd_dir, 'mixer.rrd')
     logging.info(f'Writing to {rrd_file}')
     logging.info(f'Using {get_input_device_info(device_index)} for recording')
 
