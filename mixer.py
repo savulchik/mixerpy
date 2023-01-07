@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import math
 
 import sounddevice as sd
 import numpy as np
@@ -22,7 +23,8 @@ def list_devices():
 
 
 @app.command()
-def record(device_index: Optional[int] = None):
+def record(device_index: Optional[int] = None,
+           rrdcached: str = 'unix:/tmp/rrdcached.sock'):
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO, stream=sys.stdout)
     samplerate = 44100
     block_duration_seconds = 1
@@ -35,9 +37,14 @@ def record(device_index: Optional[int] = None):
     if not os.path.exists(rrd_file):
         rrdtool.create(
             rrd_file,
+            '--daemon', rrdcached,
             '--step', '1s',
-            'DS:amplitude:GAUGE:1m:0:32767',
-            'RRA:AVERAGE:0.5:1s:1day')
+            '--no-overwrite',
+            'DS:peak_amplitude:GAUGE:1m:0:32767',
+            'DS:peak_amplitude_dbfs:GAUGE:1m:U:0',
+            'DS:rms_amplitude:GAUGE:1m:0:32767',
+            'DS:rms_amplitude_dbfs:GAUGE:1m:U:0',
+            'RRA:AVERAGE:0.5:1s:4w')
 
     with sd.InputStream(
             samplerate=samplerate,
@@ -50,11 +57,18 @@ def record(device_index: Optional[int] = None):
             block_time_epoch_seconds = int(time.time())
             start_ns = time.monotonic_ns()
             block = block.reshape(-1)
+            amplitude_max_value = 32767
+            peak_amplitude = min(np.amax(np.abs(block)), amplitude_max_value)
             rms_amplitude = np.sqrt(np.mean(np.square(block, dtype=np.int64)))
+            peak_amplitude_dbfs = 20 * math.log10(peak_amplitude / amplitude_max_value) if peak_amplitude > 0 else -np.inf
+            rms_amplitude_dbfs = 20 * math.log10(rms_amplitude / amplitude_max_value) if rms_amplitude > 0 else -np.inf
+            rrdtool.update(rrd_file,
+                           '--daemon', rrdcached,
+                           '--skip-past-updates',
+                           f'{block_time_epoch_seconds}:{peak_amplitude}:{peak_amplitude_dbfs}:{rms_amplitude}:{rms_amplitude_dbfs}')
             end_ns = time.monotonic_ns()
             elapsed_ns = end_ns - start_ns
-            rrdtool.update(rrd_file, f'{block_time_epoch_seconds}:{rms_amplitude}')
-            logging.info(f'RMS:{block_time_epoch_seconds}:{rms_amplitude:.2f}, elapsed ms: {int(elapsed_ns / 1_000_000)}')
+            logging.info(f'{block_time_epoch_seconds}:{peak_amplitude}:{peak_amplitude_dbfs:.2f}:{rms_amplitude:.2f}:{rms_amplitude_dbfs:.2f}, elapsed ms: {int(elapsed_ns / 1_000_000)}')
 
 
 if __name__ == "__main__":
