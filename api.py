@@ -10,15 +10,30 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 def root() -> RedirectResponse:
     return RedirectResponse(url='static/index.html')
 
-@app.get("/graph")
-def graph(width: str, height: str, start: str, end: str, zoom: str) -> Response:
+@app.get("/graph/amplitude")
+def graph_amplitude(width: str, height: str, start: str, end: str, zoom: str) -> Response:
     result = rrdtool.graphv('-',
                             '--start', start,
                             '--end', end,
                             '--width', width,
                             '--height', height,
-                            'DEF:amplitude=mixer.rrd:amplitude:AVERAGE',
-                            'LINE1:amplitude#FF0000')
+                            'DEF:peak_amplitude=mixer.rrd:peak_amplitude:AVERAGE',
+                            'DEF:rms_amplitude=mixer.rrd:rms_amplitude:AVERAGE',
+                            'LINE1:peak_amplitude#FF0000',
+                            'LINE1:rms_amplitude#0000FF')
+    return Response(content=result['image'], media_type='image/png')
+
+@app.get("/graph/amplitude_dbfs")
+def graph_amplitude(width: str, height: str, start: str, end: str, zoom: str) -> Response:
+    result = rrdtool.graphv('-',
+                            '--start', start,
+                            '--end', end,
+                            '--width', width,
+                            '--height', height,
+                            'DEF:peak_amplitude_dbfs=mixer.rrd:peak_amplitude_dbfs:AVERAGE',
+                            'DEF:rms_amplitude_dbfs=mixer.rrd:rms_amplitude_dbfs:AVERAGE',
+                            'LINE1:peak_amplitude_dbfs#FF0000',
+                            'LINE1:rms_amplitude_dbfs#0000FF')
     return Response(content=result['image'], media_type='image/png')
 
 @app.post("/flush")

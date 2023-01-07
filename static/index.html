@@ -18,7 +18,7 @@
 
             // 'activate' the charts
             var graphs = [];
-            q('.graph').forEach(function(item){ 
+            q('.graph').forEach(function(item) {
                 graphs.push(
                     q(item).rrdGraphPng({
                         canvasPadding: 120,
@@ -30,13 +30,19 @@
             });
 
             // create a control panel and attach it to the charts
-            q('#ctrl').rrdGraphCtrl(graphs,{
+            q('#ctrl').rrdGraphCtrl(graphs, {
                 initialTimeRange: 'Last 60 Minutes',
                 resetTimeOnDateChange: true
             });
 
             q('#flush').on('click', function() {
-                alert('TODO');
+                var req = q.io.xhr("/flush", { method: "POST", async: false });
+                var resp = req.send();
+                if (resp.status == 200) {
+                    graphs.forEach(function(graph) {
+                        graph.update();
+                    });
+                }
             });
         });
     </script>
@@ -47,7 +53,8 @@
     <button id="flush">Flush</button>
 
     <div>
-        <img style="width:1024px;height:600px" class="graph" data-src-template="../graph?width={{width}}&amp;height={{height}}&amp;start={{start}}&amp;end={{end}}&amp;zoom={{zoom}}&amp;rand={{random}}"/>
+        <img style="width:1024px;height:300px" class="graph" data-src-template="../graph/amplitude?width={{width}}&amp;height={{height}}&amp;start={{start}}&amp;end={{end}}&amp;zoom={{zoom}}&amp;rand={{random}}"/>
+        <img style="width:1024px;height:300px" class="graph" data-src-template="../graph/amplitude_dbfs?width={{width}}&amp;height={{height}}&amp;start={{start}}&amp;end={{end}}&amp;zoom={{zoom}}&amp;rand={{random}}"/>
     </div>
 </body>
 </html>
