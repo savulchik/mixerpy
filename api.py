@@ -4,8 +4,10 @@ from fastapi.staticfiles import StaticFiles
 import rrdtool
 from pydantic import BaseSettings
 import os
+import logging
+import sys
 
-
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO, stream=sys.stdout)
 rrd_dir = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -15,6 +17,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+logging.info(f'Using {settings}')
+
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
