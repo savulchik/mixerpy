@@ -36,12 +36,12 @@ def graph_amplitude(width: str, height: str, start: str, end: str, zoom: str) ->
                             '--title', 'Amplitude',
                             f'DEF:peak_amplitude={settings.rrd_file}:peak_amplitude:AVERAGE',
                             f'DEF:rms_amplitude={settings.rrd_file}:rms_amplitude:AVERAGE',
-                            f'CDEF:peak_amplitude_trend=peak_amplitude,180,TREND',
-                            f'CDEF:rms_amplitude_trend=rms_amplitude,180,TREND',
+                            f'CDEF:peak_amplitude_trend=peak_amplitude,180,TRENDNAN',
+                            f'CDEF:rms_amplitude_trend=rms_amplitude,180,TRENDNAN',
                             # 'LINE1:peak_amplitude#FF0000',
                             # 'LINE1:rms_amplitude#0000FF',
-                            'LINE1:peak_amplitude_trend#FF0000',
-                            'LINE1:rms_amplitude_trend#0000FF')
+                            'LINE1:peak_amplitude_trend#FF0000:peak',
+                            'LINE1:rms_amplitude_trend#0000FF:RMS')
     return Response(content=result['image'], media_type='image/png')
 
 @app.get("/graph/amplitude_dbfs")
@@ -51,15 +51,16 @@ def graph_amplitude(width: str, height: str, start: str, end: str, zoom: str) ->
                             '--end', end,
                             '--width', width,
                             '--height', height,
-                            '--title', 'Amplitude (dBFS)',
+                            '--title', 'Amplitude',
+                            '--vertical-label', 'dBFS',
                             f'DEF:peak_amplitude_dbfs={settings.rrd_file}:peak_amplitude_dbfs:AVERAGE',
                             f'DEF:rms_amplitude_dbfs={settings.rrd_file}:rms_amplitude_dbfs:AVERAGE',
-                            f'CDEF:peak_amplitude_trend_dbfs=peak_amplitude_dbfs,180,TREND',
-                            f'CDEF:rms_amplitude_trend_dbfs=rms_amplitude_dbfs,180,TREND',
+                            f'CDEF:peak_amplitude_trend_dbfs=peak_amplitude_dbfs,180,TRENDNAN',
+                            f'CDEF:rms_amplitude_trend_dbfs=rms_amplitude_dbfs,180,TRENDNAN',
                             # 'LINE1:peak_amplitude_dbfs#FF0000',
                             # 'LINE1:rms_amplitude_dbfs#0000FF',
-                            'LINE1:peak_amplitude_trend_dbfs#FF0000',
-                            'LINE1:rms_amplitude_trend_dbfs#0000FF')
+                            'LINE1:peak_amplitude_trend_dbfs#FF0000:peak',
+                            'LINE1:rms_amplitude_trend_dbfs#0000FF:RMS')
     return Response(content=result['image'], media_type='image/png')
 
 @app.post("/flush")
