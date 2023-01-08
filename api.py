@@ -40,8 +40,8 @@ def graph_amplitude(width: str, height: str, start: str, end: str, zoom: str) ->
                             f'CDEF:rms_amplitude_trend=rms_amplitude,180,TRENDNAN',
                             # 'LINE1:peak_amplitude#FF0000',
                             # 'LINE1:rms_amplitude#0000FF',
-                            'LINE1:peak_amplitude_trend#FF0000:peak',
-                            'LINE1:rms_amplitude_trend#0000FF:RMS')
+                            'LINE1:peak_amplitude_trend#FF0000',
+                            'LINE1:rms_amplitude_trend#0000FF')
     return Response(content=result['image'], media_type='image/png')
 
 @app.get("/graph/amplitude_dbfs")
@@ -59,8 +59,8 @@ def graph_amplitude(width: str, height: str, start: str, end: str, zoom: str) ->
                             f'CDEF:rms_amplitude_trend_dbfs=rms_amplitude_dbfs,180,TRENDNAN',
                             # 'LINE1:peak_amplitude_dbfs#FF0000',
                             # 'LINE1:rms_amplitude_dbfs#0000FF',
-                            'LINE1:peak_amplitude_trend_dbfs#FF0000:peak',
-                            'LINE1:rms_amplitude_trend_dbfs#0000FF:RMS')
+                            'LINE1:peak_amplitude_trend_dbfs#FF0000',
+                            'LINE1:rms_amplitude_trend_dbfs#0000FF')
     return Response(content=result['image'], media_type='image/png')
 
 @app.post("/flush")
