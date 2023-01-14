@@ -4,3 +4,4 @@ rrdtool==0.1.16
 fastapi==0.88.0
 uvicorn==0.20.0
 typer[all]==0.7.0
+soundfile==0.11.0
