@@ -91,11 +91,21 @@ def record(device_index: Optional[int] = None,
                                    '--daemon', rrdcached,
                                    '--skip-past-updates',
                                    f'{block_time_epoch_seconds}:{peak_amplitude}:{peak_amplitude_dbfs}:{rms_amplitude}:{rms_amplitude_dbfs}')
+                    if len(blocks) >= 30:
+                        audio_file.write(np.concatenate(blocks))
+                        logging.info(f'Written {len(blocks)} intermediate audio blocks')
+                        blocks = []
+
                     end_ns = time.monotonic_ns()
                     elapsed_ns = end_ns - start_ns
                     logging.info(f'{block_time_epoch_seconds}:{peak_amplitude}:{peak_amplitude_dbfs:.2f}:{rms_amplitude:.2f}:{rms_amplitude_dbfs:.2f}, elapsed ms: {int(elapsed_ns / 1_000_000)}')
 
-                audio_file.write(np.concatenate(blocks))
+                if len(blocks) > 0:
+                    start_ns = time.monotonic_ns()
+                    audio_file.write(np.concatenate(blocks))
+                    end_ns = time.monotonic_ns()
+                    elapsed_ns = end_ns - start_ns
+                    logging.info(f'Written {len(blocks)} remaining audio blocks, elapsed ms: {int(elapsed_ns / 1_000_000)}')
 
 
 if __name__ == "__main__":
