@@ -2,3 +2,4 @@
 *.rrd
 .idea/
 venv
+audio/
