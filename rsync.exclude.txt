@@ -1,0 +1,6 @@
+venv
+.git
+.idea
+mixer.rrd
+__pycache__
+audio
