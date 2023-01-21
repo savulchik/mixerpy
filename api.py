@@ -20,11 +20,12 @@ settings = Settings()
 logging.info(f'Using {settings}')
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount('/static', StaticFiles(directory='static', html=True), name='static')
+app.mount('/audio', StaticFiles(directory='audio'), name='audio')
 
 @app.get("/")
 def root() -> RedirectResponse:
-    return RedirectResponse(url='static/index.html')
+    return RedirectResponse(url='static/')
 
 @app.get("/graph/amplitude")
 def graph_amplitude(width: str, height: str, start: str, end: str, zoom: str) -> Response:
