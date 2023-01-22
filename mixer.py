@@ -12,6 +12,7 @@ from typing import Optional
 import soundfile as sf
 from datetime import datetime
 from dataclasses import dataclass
+from stopwatch import Stopwatch
 
 
 SAMPLERATE = 44100
@@ -88,11 +89,10 @@ def record_measurement(rrd_file: str,
 
 def write_blocks(audio_file: sf.SoundFile,
                  blocks: list[np.ndarray]):
-    start_ns = time.monotonic_ns()
+    write_time = Stopwatch()
     audio_file.write(np.concatenate(blocks))
-    end_ns = time.monotonic_ns()
-    elapsed_ns = end_ns - start_ns
-    logging.info(f'Written {len(blocks)} audio blocks to {audio_file.name}, elapsed ms: {int(elapsed_ns / 1_000_000)}')
+    write_time.stop()
+    logging.info(f'Written {len(blocks)} audio blocks to {audio_file.name}, elapsed: {write_time}')
 
 
 @app.command()
@@ -143,14 +143,12 @@ def record(device_index: Optional[int] = None,
                     return audio_input_stream.time - recording_start_seconds
 
                 while recording_duration_seconds() <= audio_duration_seconds:
-                    start_ns = time.monotonic_ns()
+                    block_read_time = Stopwatch()
                     block, overflowed = audio_input_stream.read(frames=block_size)
-                    end_ns = time.monotonic_ns()
-                    elapsed_ns = end_ns - start_ns
-                    block_read_time_ms = int(elapsed_ns / 1_000_000)
                     block_time_epoch_seconds = int(time.time())
+                    block_read_time.stop()
 
-                    start_ns = time.monotonic_ns()
+                    block_processing_time = Stopwatch()
                     block = block.reshape(-1)
                     blocks.append(block)
                     measurement = process_block(block_time_epoch_seconds, overflowed, block)
@@ -160,10 +158,9 @@ def record(device_index: Optional[int] = None,
                         write_blocks(audio_file, blocks)
                         blocks = []
 
-                    end_ns = time.monotonic_ns()
-                    elapsed_ns = end_ns - start_ns
-                    block_processing_time_ms = int(elapsed_ns / 1_000_000)
-                    logging.info(f'{measurement}, block read ms: {block_read_time_ms}, block processing ms: {block_processing_time_ms}')
+                    block_processing_time.stop()
+
+                    logging.info(f'{measurement}, read: {block_read_time}, process: {block_processing_time}')
 
                 if len(blocks) > 0:
                     write_blocks(audio_file, blocks)

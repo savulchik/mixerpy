@@ -5,3 +5,4 @@ fastapi==0.88.0
 uvicorn==0.20.0
 typer[all]==0.7.0
 soundfile==0.11.0
+stopwatch.py==2.0.1
