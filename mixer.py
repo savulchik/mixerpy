@@ -27,20 +27,20 @@ mixer_dir = os.path.dirname(os.path.abspath(__file__))
 class Measurement:
     epoch_seconds: int
     peak_amplitude: np.int16
-    rms_amplitude: np.float64
     peak_amplitude_dbfs: np.float64
+    rms_amplitude: np.float64
     rms_amplitude_dbfs: np.float64
 
 
 def process_block(epoch_seconds: int, block: np.ndarray) -> Measurement:
     peak_amplitude = min(np.amax(np.abs(block)), AMPLITUDE_MAX_VALUE)
-    rms_amplitude = np.sqrt(np.mean(np.square(block, dtype=np.int64)))
-    peak_amplitude_dbfs = 20 * math.log10(peak_amplitude / AMPLITUDE_MAX_VALUE) if peak_amplitude > 0 else -np.inf
-    rms_amplitude_dbfs = 20 * math.log10(rms_amplitude / AMPLITUDE_MAX_VALUE) if rms_amplitude > 0 else -np.inf
+    peak_amplitude_dbfs = round(20 * math.log10(peak_amplitude / AMPLITUDE_MAX_VALUE), 2) if peak_amplitude > 0 else -np.inf
+    rms_amplitude = round(np.sqrt(np.mean(np.square(block, dtype=np.int64))), 2)
+    rms_amplitude_dbfs = round(20 * math.log10(rms_amplitude / AMPLITUDE_MAX_VALUE), 2) if rms_amplitude > 0 else -np.inf
     return Measurement(epoch_seconds,
                        peak_amplitude,
-                       rms_amplitude,
                        peak_amplitude_dbfs,
+                       rms_amplitude,
                        rms_amplitude_dbfs)
 
 
@@ -48,9 +48,9 @@ def get_input_device_info(device_index: Optional[int]) -> dict:
     return sd.query_devices(device_index, kind='input') if device_index is not None else sd.query_devices(kind='input')
 
 
-def get_audio_file_path(base_dir: str, audio_start: datetime) -> str:
+def get_audio_file_path(base_dir: str, audio_start: datetime, audio_format: str) -> str:
     date_dir = os.path.join(base_dir, audio_start.date().isoformat())
-    file_name = f"{audio_start.isoformat(sep=' ', timespec='seconds')}.mp3"
+    file_name = f"{audio_start.isoformat(sep=' ', timespec='seconds')}.{audio_format}"
     return os.path.join(date_dir, file_name)
 
 
@@ -73,8 +73,8 @@ def record_measurement(rrd_file: str,
                        measurement: Measurement):
     parts = [measurement.epoch_seconds,
              measurement.peak_amplitude,
-             measurement.rms_amplitude,
              measurement.peak_amplitude_dbfs,
+             measurement.rms_amplitude,
              measurement.rms_amplitude_dbfs]
     rrdtool.update(rrd_file,
                    '--daemon', rrdcached,
@@ -103,7 +103,8 @@ def record(device_index: Optional[int] = None,
            rrd_file: str = os.path.join(mixer_dir, 'mixer.rrd'),
            audio_dir: str = os.path.join(mixer_dir, 'audio'),
            audio_duration_minutes: int = 5,
-           block_duration_seconds: int = 1):
+           block_duration_seconds: int = 1,
+           audio_format: str = 'wav'):
     logging.info(f'Using {rrd_file} via {rrdcached} for storage')
 
     if not os.path.exists(rrd_file):
@@ -116,21 +117,19 @@ def record(device_index: Optional[int] = None,
                         dtype=SAMPLE_DTYPE,
                         channels=CHANNELS,
                         latency='low') as stream:
-
         block_size = SAMPLERATE * block_duration_seconds
         audio_duration = timedelta(minutes=audio_duration_minutes)
 
         while True:
             audio_start = datetime.now()
-            audio_file_path = get_audio_file_path(audio_dir, audio_start)
-            logging.info(f'Writing audio to {audio_file_path}')
-
+            audio_file_path = get_audio_file_path(audio_dir, audio_start, audio_format)
             os.makedirs(os.path.dirname(audio_file_path), exist_ok=True)
 
             with sf.SoundFile(file=audio_file_path,
                               mode='w',
                               samplerate=SAMPLERATE,
                               channels=CHANNELS) as audio_file:
+                logging.info(f'Writing audio to {audio_file}')
                 blocks = []
                 audio_end = audio_start + audio_duration
                 while datetime.now() < audio_end:
