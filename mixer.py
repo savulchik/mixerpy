@@ -104,7 +104,7 @@ def record(device_index: Optional[int] = None,
            audio_dir: str = os.path.join(mixer_dir, 'audio'),
            audio_duration_minutes: int = 5,
            block_duration_seconds: int = 1,
-           audio_format: str = 'wav'):
+           audio_format: str = 'flac'):
     logging.info(f'Using {rrd_file} via {rrdcached} for storage')
 
     if not os.path.exists(rrd_file):
