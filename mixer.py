@@ -152,6 +152,8 @@ def record(device_index: Optional[int] = None,
                 if len(blocks) > 0:
                     write_blocks(audio_file, blocks)
 
+                audio_file.flush()
+
 
 if __name__ == "__main__":
     app()
