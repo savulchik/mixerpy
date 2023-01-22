@@ -10,7 +10,7 @@ import sys
 import typer
 from typing import Optional
 import soundfile as sf
-from datetime import datetime, timedelta
+from datetime import datetime
 from dataclasses import dataclass
 
 
@@ -109,7 +109,8 @@ def record(device_index: Optional[int] = None,
            audio_duration_minutes: int = 5,
            block_duration_seconds: int = 1,
            audio_format: str = 'flac',
-           audio_blocks_write_number: int = 10):
+           audio_blocks_write_number: int = 10,
+           latency: float = 1.0):
     logging.info(f'Using {rrd_file} via {rrdcached} for storage')
 
     if not os.path.exists(rrd_file):
@@ -117,17 +118,17 @@ def record(device_index: Optional[int] = None,
 
     logging.info(f'Using {get_input_device_info(device_index)} for recording')
 
+    block_size = SAMPLERATE * block_duration_seconds
+
     with sd.InputStream(samplerate=SAMPLERATE,
                         device=device_index,
                         dtype=SAMPLE_DTYPE,
                         channels=CHANNELS,
-                        latency='low') as stream:
-        block_size = SAMPLERATE * block_duration_seconds
-        audio_duration = timedelta(minutes=audio_duration_minutes)
+                        latency=latency) as audio_input_stream:
+        audio_duration_seconds = audio_duration_minutes * 60
 
         while True:
-            audio_start = datetime.now()
-            audio_file_path = get_audio_file_path(audio_dir, audio_start, audio_format)
+            audio_file_path = get_audio_file_path(audio_dir, audio_start=datetime.now(), audio_format=audio_format)
             os.makedirs(os.path.dirname(audio_file_path), exist_ok=True)
 
             with sf.SoundFile(file=audio_file_path,
@@ -136,12 +137,21 @@ def record(device_index: Optional[int] = None,
                               channels=CHANNELS) as audio_file:
                 logging.info(f'Writing audio to {audio_file}')
                 blocks = []
-                audio_end = audio_start + audio_duration
-                while datetime.now() < audio_end:
-                    block, overflowed = stream.read(frames=block_size)
-                    block_time_epoch_seconds = int(time.time())
-                    block = block.reshape(-1)
+                recording_start_seconds = audio_input_stream.time
+
+                def recording_duration_seconds() -> int:
+                    return audio_input_stream.time - recording_start_seconds
+
+                while recording_duration_seconds() <= audio_duration_seconds:
                     start_ns = time.monotonic_ns()
+                    block, overflowed = audio_input_stream.read(frames=block_size)
+                    end_ns = time.monotonic_ns()
+                    elapsed_ns = end_ns - start_ns
+                    block_read_time_ms = int(elapsed_ns / 1_000_000)
+                    block_time_epoch_seconds = int(time.time())
+
+                    start_ns = time.monotonic_ns()
+                    block = block.reshape(-1)
                     blocks.append(block)
                     measurement = process_block(block_time_epoch_seconds, overflowed, block)
                     record_measurement(rrd_file, rrdcached, measurement)
@@ -152,7 +162,8 @@ def record(device_index: Optional[int] = None,
 
                     end_ns = time.monotonic_ns()
                     elapsed_ns = end_ns - start_ns
-                    logging.info(f'{measurement}, elapsed ms: {int(elapsed_ns / 1_000_000)}')
+                    block_processing_time_ms = int(elapsed_ns / 1_000_000)
+                    logging.info(f'{measurement}, block read ms: {block_read_time_ms}, block processing ms: {block_processing_time_ms}')
 
                 if len(blocks) > 0:
                     write_blocks(audio_file, blocks)
