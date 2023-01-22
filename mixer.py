@@ -126,6 +126,7 @@ def record(device_index: Optional[int] = None,
                         channels=CHANNELS,
                         latency=latency) as audio_input_stream:
         audio_duration_seconds = audio_duration_minutes * 60
+        last_block_time_epoch_seconds = 0
 
         while True:
             audio_file_path = get_audio_file_path(audio_dir, audio_start=datetime.now(), audio_format=audio_format)
@@ -152,7 +153,10 @@ def record(device_index: Optional[int] = None,
                     block = block.reshape(-1)
                     blocks.append(block)
                     measurement = process_block(block_time_epoch_seconds, overflowed, block)
-                    record_measurement(rrd_file, rrdcached, measurement)
+
+                    if block_time_epoch_seconds > last_block_time_epoch_seconds:
+                        record_measurement(rrd_file, rrdcached, measurement)
+                        last_block_time_epoch_seconds = block_time_epoch_seconds
 
                     if len(blocks) >= audio_blocks_write_number:
                         write_blocks(audio_file, blocks)
