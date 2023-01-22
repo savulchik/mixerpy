@@ -26,18 +26,22 @@ mixer_dir = os.path.dirname(os.path.abspath(__file__))
 @dataclass
 class Measurement:
     epoch_seconds: int
+    overflowed: bool
     peak_amplitude: np.int16
     peak_amplitude_dbfs: np.float64
     rms_amplitude: np.float64
     rms_amplitude_dbfs: np.float64
 
 
-def process_block(epoch_seconds: int, block: np.ndarray) -> Measurement:
+def process_block(epoch_seconds: int,
+                  overflowed: bool,
+                  block: np.ndarray) -> Measurement:
     peak_amplitude = min(np.amax(np.abs(block)), AMPLITUDE_MAX_VALUE)
     peak_amplitude_dbfs = round(20 * math.log10(peak_amplitude / AMPLITUDE_MAX_VALUE), 2) if peak_amplitude > 0 else -np.inf
     rms_amplitude = round(np.sqrt(np.mean(np.square(block, dtype=np.int64))), 2)
     rms_amplitude_dbfs = round(20 * math.log10(rms_amplitude / AMPLITUDE_MAX_VALUE), 2) if rms_amplitude > 0 else -np.inf
     return Measurement(epoch_seconds,
+                       overflowed,
                        peak_amplitude,
                        peak_amplitude_dbfs,
                        rms_amplitude,
@@ -134,12 +138,12 @@ def record(device_index: Optional[int] = None,
                 blocks = []
                 audio_end = audio_start + audio_duration
                 while datetime.now() < audio_end:
-                    block, _ = stream.read(frames=block_size)
+                    block, overflowed = stream.read(frames=block_size)
                     block_time_epoch_seconds = int(time.time())
                     block = block.reshape(-1)
                     start_ns = time.monotonic_ns()
                     blocks.append(block)
-                    measurement = process_block(block_time_epoch_seconds, block)
+                    measurement = process_block(block_time_epoch_seconds, overflowed, block)
                     record_measurement(rrd_file, rrdcached, measurement)
 
                     if len(blocks) >= audio_blocks_write_number:
