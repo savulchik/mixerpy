@@ -109,7 +109,7 @@ def record(device_index: Optional[int] = None,
            audio_duration_minutes: int = 5,
            block_duration_seconds: int = 1,
            audio_format: str = 'flac',
-           audio_blocks_write_number: int = 10,
+           audio_blocks_write_number: int = 5,
            latency: float = 1.0):
     logging.info(f'Using {rrd_file} via {rrdcached} for storage')
 
