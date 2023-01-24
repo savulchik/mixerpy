@@ -110,7 +110,7 @@ def record(device_index: Optional[int] = None,
            block_duration_seconds: int = 1,
            audio_format: str = 'flac',
            audio_blocks_write_number: int = 5,
-           latency: float = 5.0):
+           latency: float = 2.0):
     logging.info(f'Using {rrd_file} via {rrdcached} for storage')
 
     if not os.path.exists(rrd_file):
