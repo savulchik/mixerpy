@@ -13,7 +13,7 @@ import soundfile as sf
 from datetime import datetime
 from dataclasses import dataclass
 from stopwatch import Stopwatch
-
+import splweighting
 
 SAMPLERATE = 44100
 SAMPLE_DTYPE = np.int16
@@ -39,7 +39,7 @@ def process_block(epoch_seconds: int,
                   block: np.ndarray) -> Measurement:
     peak_amplitude = min(np.amax(np.abs(block)), AMPLITUDE_MAX_VALUE)
     peak_amplitude_dbfs = round(20 * math.log10(peak_amplitude / AMPLITUDE_MAX_VALUE), 2) if peak_amplitude > 0 else -np.inf
-    rms_amplitude = round(np.sqrt(np.mean(np.square(block, dtype=np.int64))), 2)
+    rms_amplitude = round(np.sqrt(np.mean(np.square(block, dtype=np.float64))), 2)
     rms_amplitude_dbfs = round(20 * math.log10(rms_amplitude / AMPLITUDE_MAX_VALUE), 2) if rms_amplitude > 0 else -np.inf
     return Measurement(epoch_seconds,
                        overflowed,
@@ -152,7 +152,8 @@ def record(device_index: Optional[int] = None,
                     block_processing_time = Stopwatch()
                     block = block.reshape(-1)
                     blocks.append(block)
-                    measurement = process_block(block_time_epoch_seconds, overflowed, block)
+                    a_weighted_block = splweighting.weight_signal(block, sample_rate=SAMPLERATE, weighting='A')
+                    measurement = process_block(block_time_epoch_seconds, overflowed, a_weighted_block)
 
                     if block_time_epoch_seconds > last_block_time_epoch_seconds:
                         record_measurement(rrd_file, rrdcached, measurement)
