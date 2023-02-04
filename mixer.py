@@ -7,7 +7,7 @@ import numpy as np
 import time
 import rrdtool
 import os
-import logging
+import coloredlogs, logging
 import sys
 import typer
 from typing import Optional
@@ -22,7 +22,11 @@ SAMPLE_DTYPE = np.int16
 AMPLITUDE_MAX_VALUE = 32767
 CHANNELS = 1
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO, stream=sys.stdout)
+coloredlogs.install(fmt='%(asctime)s %(levelname)s %(message)s',
+                    stream=sys.stdout,
+                    milliseconds=True,
+                    isatty=True)
+# logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO, stream=sys.stdout)
 app = typer.Typer()
 mixer_dir = os.path.dirname(os.path.abspath(__file__))
 
