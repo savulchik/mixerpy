@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import math
+
+import scipy.signal
 import sounddevice as sd
 import numpy as np
 import time
@@ -119,6 +121,10 @@ def record(device_index: Optional[int] = None,
     logging.info(f'Using {get_input_device_info(device_index)} for recording')
 
     block_size = SAMPLERATE * block_duration_seconds
+    b, a = splweighting.a_weighting_coeffs_design(SAMPLERATE)
+
+    def a_weighting(block: np.ndarray) -> np.ndarray:
+        return scipy.signal.lfilter(b, a, block)
 
     with sd.InputStream(samplerate=SAMPLERATE,
                         device=device_index,
@@ -152,7 +158,7 @@ def record(device_index: Optional[int] = None,
                     block_processing_time = Stopwatch()
                     block = block.reshape(-1)
                     blocks.append(block)
-                    a_weighted_block = splweighting.weight_signal(block, sample_rate=SAMPLERATE, weighting='A')
+                    a_weighted_block = a_weighting(block)
                     measurement = process_block(block_time_epoch_seconds, overflowed, a_weighted_block)
 
                     if block_time_epoch_seconds > last_block_time_epoch_seconds:
