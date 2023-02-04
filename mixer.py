@@ -22,7 +22,7 @@ SAMPLE_DTYPE = np.int16
 AMPLITUDE_MAX_VALUE = 32767
 CHANNELS = 1
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO, stream=sys.stdout)
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO, stream=sys.stdout)
 app = typer.Typer()
 mixer_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -171,7 +171,8 @@ def record(device_index: Optional[int] = None,
 
                     block_processing_time.stop()
 
-                    logging.info(f'{measurement}, read: {block_read_time}, process: {block_processing_time}')
+                    log_level = logging.ERROR if overflowed else logging.INFO
+                    logging.log(log_level, f'{measurement}, read: {block_read_time}, process: {block_processing_time}')
 
                 if len(blocks) > 0:
                     write_blocks(audio_file, blocks)
