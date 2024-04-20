@@ -3,3 +3,5 @@
 .idea/
 venv
 audio/
+.DS_Store
+__pycache__/
